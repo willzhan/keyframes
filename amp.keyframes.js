@@ -1,3 +1,24 @@
+/*              The MIT License (MIT)
+
+Copyright (c) 2015 Microsoft Corporation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.                       */
 
 (function () {
     'use strict';
@@ -82,15 +103,15 @@
         //hovering div style depends on input
         var hover_vertical_offset = 26;
         var hover_width = "90px";
-        if (urlFormat.length > 1) {
-            hover_vertical_offset = 113;
+        if (urlFormat.length > 0) {
+            hover_vertical_offset = 111;
             hover_width = "200px";
         }
 
         //add the div hosting thumbnail
         var hover = document.createElement('div');
         hover.id = "hover";
-        hover.style.top = -1 * (/*player.controlBar.el().offsetHeight + */hover_vertical_offset + 8) + "px";
+        hover.style.top = -1 * (/*player.controlBar.el().offsetHeight + */hover_vertical_offset + 1) + "px";
         hover.style.display = "block";
         hover.style.width = hover_width;
         hover.style.position = "absolute";
@@ -98,7 +119,7 @@
         
         //add an img element
         var thumbnail;
-        if (urlFormat.length > 1) {
+        if (urlFormat.length > 0) {
             thumbnail = document.createElement('img');
             thumbnail.id = "thumbnail";
             thumbnail.style.visibility = "visible";
@@ -149,12 +170,41 @@
             hover.style.left = "-1000px";
         });
 
-        //ended event
-        player.addEventListener(amp.eventName.ended, function () {
-            player.poster("Content/images/HoloLens.jpg");
-            player.currentTime(0);
-            player.exitFullscreen();
+        player.ready(function () {  //main function
+            registerKeyframesEvents();
         });
+
+        //register events to handle 
+        function registerKeyframesEvents() {
+            var events = [amp.eventName.ended,
+                          amp.eventName.canplaythrough,
+            ];
+
+            for (var i = 0; i < events.length; i++) {
+                player.addEventListener(events[i], keyframesEventHandler);
+            }
+        }
+
+        function keyframesEventHandler(evt) {
+            switch (evt.type) {
+                case amp.eventName.canplaythrough:
+                    //get video URL and build semi-complete image URL (missing [index].jpg)
+                    if (urlFormat.indexOf("://") < 0) {  //if full URL is given, we use it as the customized image location
+                        var url = player.currentSrc();
+                        urlFormat = url.substring(0, url.indexOf(".ism")) + urlFormat;
+                    }
+                    break;
+                case amp.eventName.ended:
+                    player.poster("Content/images/HoloLens.jpg");
+                    player.currentTime(0);
+                    player.exitFullscreen();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+
 
     });
 })();
